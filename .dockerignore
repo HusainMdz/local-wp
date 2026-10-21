@@ -1,0 +1,4 @@
+# The image only needs what the Dockerfile COPYs. Everything else (.env, .git,
+# theme source, backups) stays out of the build context.
+*
+!dev/zshrc

@@ -1,0 +1,55 @@
+name: mindzer-systems
+services:
+  db:
+    # Staging: 10.11.5-MariaDB (max_allowed_packet 16M, max_connections 151 are the defaults).
+    image: mariadb:10.11.5
+    ports:
+      - "127.0.0.1:3306:3306" # reachable from this machine only
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set it in .env (see .env.example)}
+      MARIADB_DATABASE: ${DB_NAME:?set it in .env (see .env.example)}
+      MARIADB_USER: ${DB_USER:?set it in .env (see .env.example)}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set it in .env (see .env.example)}
+    volumes:
+      # New volume: MySQL 8 data files cannot be opened by MariaDB.
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      # Ships with the image: succeeds once the server accepts logins and InnoDB is up.
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  wordpress:
+    depends_on:
+      db:
+        condition: service_healthy
+    build: . # <--- This tells Docker to build using your custom Dockerfile
+    volumes:
+      - app_data:/var/www/html
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      # Must equal staging's prefix, or a pulled database looks like an empty site.
+      WORDPRESS_TABLE_PREFIX: ${DB_TABLE_PREFIX:-wp_}
+      # Staging: DB_CHARSET utf8, WP_DEBUG off, WP_MEMORY_LIMIT / WP_MAX_MEMORY_LIMIT
+      # left at core defaults (40M / 256M), WP_ENVIRONMENT_TYPE undefined.
+      WORDPRESS_DB_CHARSET: utf8
+
+  webserver:
+    depends_on:
+      - wordpress
+    image: nginx:1.30.5-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - app_data:/var/www/html
+
+volumes:
+  mariadb_data:
+  app_data:

@@ -1,0 +1,40 @@
+# Local development extras, merged on top of compose.yml by `docker compose up`.
+# compose.yml stays a copy of staging; everything dev-only belongs here.
+# To run with staging settings only: docker compose -f compose.yml up
+services:
+  wordpress:
+    depends_on:
+      - mailpit
+    volumes:
+      - ./dev/php.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
+      - ./dev/mu-plugins/dev-mail.php:/var/www/html/wp-content/mu-plugins/dev-mail.php:ro
+      - shell_history:/var/lib/shell-history
+      # Theme / plugin code lives in the app_data volume and is edited inside this
+      # container (VS Code: "Reopen in Container", see .devcontainer/).
+    ports:
+      - "127.0.0.1:3000:3000" # theme asset dev server / live reload, if the theme uses one
+    environment:
+      XDEBUG_MODE: ${XDEBUG_MODE:-off}
+      WORDPRESS_DEBUG: "1"
+      # Errors go to wp-content/debug.log; pages render as on staging.
+      #   docker compose exec wordpress tail -f wp-content/debug.log
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_DEBUG_LOG', true);
+        define('WP_DEBUG_DISPLAY', false);
+        define('WP_ENVIRONMENT_TYPE', 'local');
+        @ini_set('display_errors', 0);
+
+  webserver:
+    ports:
+      - "443:443" # https://localhost (run `make certs` once)
+    volumes:
+      - ./dev/nginx/ssl.conf:/etc/nginx/dev/ssl.conf:ro
+      - ./dev/certs:/etc/nginx/certs:ro
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "127.0.0.1:8025:8025" # web inbox: http://localhost:8025
+
+volumes:
+  shell_history:

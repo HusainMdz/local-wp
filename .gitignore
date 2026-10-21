@@ -1,0 +1,24 @@
+# This repo holds the local environment only. All WordPress files live in the
+# `app_data` Docker volume, so there is nothing WordPress-shaped to ignore here.
+
+# ─── Migration archives ───────────────────────────────────────────────────
+# NEVER commit. A .wpress holds the full database: customer names, addresses,
+# emails, order history and password hashes.
+*.wpress
+*.sql
+*.sql.gz
+*.tgz
+
+# ─── Secrets & local environment ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Noise ────────────────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db
+
+# ─── Local tooling ────────────────────────────────────────────────────────
+/backups/
+/dev/certs/

@@ -1,0 +1,25 @@
+# Container shell (copied to /root and /home/www-data by the Dockerfile).
+export ZSH=/usr/share/oh-my-zsh
+ZSH_THEME="robbyrussell"
+plugins=(git composer wp-cli)
+
+# Oh My Zsh lives in a root-owned, read-only location: no self-updates,
+# and keep per-user cache and history in $HOME.
+zstyle ':omz:update' mode disabled
+ZSH_DISABLE_COMPFIX=true
+ZSH_CACHE_DIR="$HOME/.cache/oh-my-zsh"
+mkdir -p "$ZSH_CACHE_DIR/completions"
+# History survives rebuilds when the shell_history volume is mounted (dev override).
+if [[ -w /var/lib/shell-history ]]; then
+  HISTFILE="/var/lib/shell-history/$(id -un).zsh_history"
+else
+  HISTFILE="$HOME/.zsh_history"
+fi
+HISTSIZE=10000
+SAVEHIST=10000
+setopt INC_APPEND_HISTORY HIST_IGNORE_DUPS
+
+source "$ZSH/oh-my-zsh.sh"
+
+PROMPT="%F{cyan}[wp:%n]%f $PROMPT"
+alias ll='ls -la'

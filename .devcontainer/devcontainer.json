@@ -1,0 +1,28 @@
+// VS Code: "Dev Containers: Reopen in Container" opens a window inside the
+// wordpress container, on the app_data volume. Theme / plugin code is edited,
+// built and committed there; this repo only holds the Docker setup.
+{
+  "name": "Mindzer Systems (WordPress)",
+  "dockerComposeFile": ["../compose.yml", "../compose.override.yml"],
+  "service": "wordpress",
+  "runServices": ["db", "wordpress", "webserver", "mailpit"],
+  "workspaceFolder": "/var/www/html/wp-content",
+  // Closing VS Code leaves the stack running; stop it with `make down`.
+  "shutdownAction": "none",
+  // Same user as PHP and WP-CLI, so files stay writable by WordPress.
+  "remoteUser": "www-data",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "xdebug.php-debug",
+        "bmewburn.vscode-intelephense-client",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "editorconfig.editorconfig"
+      ]
+    }
+  }
+}
