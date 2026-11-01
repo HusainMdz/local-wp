@@ -40,6 +40,14 @@ RUN curl -fsSL -o /usr/local/bin/wp \
         "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" \
     && chmod +x /usr/local/bin/wp
 
+# WP-CLI starts the MariaDB tools with --no-defaults, which skips the skip-ssl setting above;
+# make its db commands read the option files so `wp db ...` reaches the local MariaDB.
+ENV WP_CLI_CONFIG_PATH=/etc/wp-cli/config.yml
+RUN mkdir -p /etc/wp-cli \
+    && printf '%s:\n  defaults: true\n' "db check" "db cli" "db clean" "db create" "db drop" \
+        "db export" "db import" "db optimize" "db query" "db repair" "db reset" \
+        > /etc/wp-cli/config.yml
+
 # Build Xdebug but do not enable it: only dev/php.ini (compose.override.yml)
 # loads it, so a staging-only run stays without it.
 ARG XDEBUG_VERSION=3.5.3

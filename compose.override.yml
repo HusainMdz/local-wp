@@ -23,18 +23,35 @@ services:
         define('WP_DEBUG_DISPLAY', false);
         define('WP_ENVIRONMENT_TYPE', 'local');
         @ini_set('display_errors', 0);
+        // A pulled database can set WP Mail SMTP to a real mail service (rederma's uses
+        // Amazon SES): force PHP mail(), which dev/php.ini hands to Mailpit.
+        define('WPMS_ON', true);
+        define('WPMS_MAILER', 'mail');
+        $$mz_host = $$_SERVER['HTTP_HOST'] ?? '';
+        if ( str_ends_with( $$mz_host, '.trycloudflare.com' ) || str_ends_with( $$mz_host, '.localhost' ) ) {
+          define( 'WP_HOME', 'https://' . $$mz_host );
+          define( 'WP_SITEURL', 'https://' . $$mz_host );
+        }
+
 
   webserver:
-    ports:
-      - "443:443" # https://localhost (run `make certs` once)
-    volumes:
-      - ./dev/nginx/ssl.conf:/etc/nginx/dev/ssl.conf:ro
-      - ./dev/certs:/etc/nginx/certs:ro
+    # Reached through the shared Caddy proxy (~/docker/proxy), which also does HTTPS:
+    # https://mindzer.localhost. Drops the "80:80" from compose.yml.
+    ports: !reset []
+    networks:
+      - default
+      - web
 
   mailpit:
     image: axllent/mailpit:v1.31.6
-    ports:
-      - "127.0.0.1:8025:8025" # web inbox: http://localhost:8025
+    # Web inbox through the shared Caddy proxy: https://mail.mindzer.localhost
+    networks:
+      - default
+      - web
 
 volumes:
   shell_history:
+
+networks:
+  web:
+    external: true
